@@ -64,10 +64,9 @@ int start()
 
 	// Set the mouse at the center of the screen
 	glfwPollEvents();
-	//glfwSetCursorPos(window, 1024 / 2, 768 / 2);
 
-	// Dark blue background
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	// White background
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -84,16 +83,19 @@ int start()
 	// Create and compile our GLSL program from the shaders
 	GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader");
 
-	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-
-
-
-	// Get a handle for our "myTextureSampler" uniform
+	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
 	GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
+	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
-	Car egoCar(0.0f, 0.0f, 0.0f, &programID, &MatrixID, &TextureID);
-	Map myMap(0.0f, 0.0f, 0.0f, &programID, &MatrixID, &TextureID);
+	glUseProgram(programID);
+	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+
+
+
+	Car egoCar(0.0f, 0.0f, 0.0f, &programID, &MatrixID, &TextureID, &ViewMatrixID, &ModelMatrixID);
+	Map myMap(0.0f, 0.0f, 0.0f, &programID, &MatrixID, &TextureID, &ModelMatrixID);
+
 	do {
 
 		// Clear the screen
@@ -101,6 +103,9 @@ int start()
 
 		// Use our shader
 		glUseProgram(programID);
+
+		glm::vec3 lightPos = glm::vec3(20, 20, 10);
+		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
 		egoCar.DrawCar();
 

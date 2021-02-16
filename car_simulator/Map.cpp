@@ -7,7 +7,7 @@ const float initialFoV = 45.0f;
 
 Map::Map() {}
 
-Map::Map(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID)
+Map::Map(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID , GLuint* ModelMatrixID)
 {
 	GroundPosition.x = init_x;
 	GroundPosition.y = init_y;
@@ -24,7 +24,7 @@ Map::Map(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLui
 	Ids.programID = programID;
 	Ids.MatrixID = MatrixID;
 	Ids.TextureID = TextureID;
-
+	Ids.ModelMatrixID = ModelMatrixID;
 
 	ObjectInit();
 }
@@ -46,6 +46,11 @@ void Map::ObjectInit()
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectGround.uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, ObjectGround.uvs.size() * sizeof(glm::vec2), &ObjectGround.uvs[0], GL_STATIC_DRAW);
 
+	glGenBuffers(1, &ObjectGround.normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectGround.normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectGround.normals.size() * sizeof(glm::vec2), &ObjectGround.normals[0], GL_STATIC_DRAW);
+
+
 	ObjectRoad.Texture = loadBMP_custom("Road.BMP");
 
 	res = loadOBJ("Road.obj", ObjectRoad.vertices, ObjectRoad.uvs, ObjectRoad.normals);
@@ -59,6 +64,10 @@ void Map::ObjectInit()
 	glGenBuffers(1, &ObjectRoad.uvbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectRoad.uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, ObjectRoad.uvs.size() * sizeof(glm::vec2), &ObjectRoad.uvs[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &ObjectRoad.normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectRoad.normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectRoad.normals.size() * sizeof(glm::vec2), &ObjectRoad.normals[0], GL_STATIC_DRAW);
 
 
 	ObjectBuilding.Texture = loadBMP_custom("buildings.BMP");
@@ -75,6 +84,11 @@ void Map::ObjectInit()
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, ObjectBuilding.uvs.size() * sizeof(glm::vec2), &ObjectBuilding.uvs[0], GL_STATIC_DRAW);
 
+
+	glGenBuffers(1, &ObjectBuilding.normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectBuilding.normals.size() * sizeof(glm::vec2), &ObjectBuilding.normals[0], GL_STATIC_DRAW);
+
 }
 
 void Map::DrawMap(mat4 PV)
@@ -83,6 +97,7 @@ void Map::DrawMap(mat4 PV)
 	glm::mat4 TotalGroundMVP = PV * GroundMVP.ModelMatrix;
 
 	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalGroundMVP[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &GroundMVP.ModelMatrix[0][0]);
 	glUniform1i(*(Ids.TextureID), 0);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -115,6 +130,16 @@ void Map::DrawMap(mat4 PV)
 		(void*)0                          // array buffer offset
 	);
 
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectGround.normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
 
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, ObjectGround.vertices.size());
@@ -125,6 +150,7 @@ void Map::DrawMap(mat4 PV)
 	glm::mat4 TotalRoadMVP = PV * RoadMVP.ModelMatrix;
 
 	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalRoadMVP[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &RoadMVP.ModelMatrix[0][0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectRoad.vertexbuffer);
 	glVertexAttribPointer(
@@ -148,6 +174,18 @@ void Map::DrawMap(mat4 PV)
 		(void*)0                          // array buffer offset
 	);
 
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectRoad.normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
+
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, ObjectRoad.vertices.size());
 
@@ -158,6 +196,7 @@ void Map::DrawMap(mat4 PV)
 	glm::mat4 TotalBuildingMVP = PV * BuildingMVP.ModelMatrix;
 
 	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalBuildingMVP[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &RoadMVP.ModelMatrix[0][0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.vertexbuffer);
 	glVertexAttribPointer(
@@ -183,6 +222,18 @@ void Map::DrawMap(mat4 PV)
 		(void*)0                          // array buffer offset
 	);
 
+
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, ObjectBuilding.vertices.size());
 
@@ -196,14 +247,17 @@ void Map::release()
 {
 	glDeleteBuffers(1, &ObjectGround.vertexbuffer);
 	glDeleteBuffers(1, &ObjectGround.uvbuffer);
+	glDeleteBuffers(1, &ObjectGround.normalbuffer);
 	glDeleteTextures(1, &ObjectGround.Texture);
 
 	glDeleteBuffers(1, &ObjectRoad.vertexbuffer);
 	glDeleteBuffers(1, &ObjectRoad.uvbuffer);
+	glDeleteBuffers(1, &ObjectRoad.normalbuffer);
 	glDeleteTextures(1,&ObjectRoad.Texture);
 
 	glDeleteBuffers(1, &ObjectBuilding.vertexbuffer);
 	glDeleteBuffers(1, &ObjectBuilding.uvbuffer);
+	glDeleteBuffers(1, &ObjectBuilding.normalbuffer);
 	glDeleteTextures(1, &ObjectBuilding.Texture);
 }
 

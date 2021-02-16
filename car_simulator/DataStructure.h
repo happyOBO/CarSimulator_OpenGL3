@@ -46,6 +46,7 @@ struct Object
 	GLuint uvbuffer;
 	vector<vec2> uvs;
 
+	GLuint normalbuffer;
 	vector<vec3> normals;
 
 	GLuint Texture;
@@ -63,4 +64,9 @@ struct IDs
 	GLuint* programID;
 	GLuint* MatrixID;
 	GLuint* TextureID;
+	GLuint* ViewMatrixID;
+	GLuint* ModelMatrixID;
+	GLuint* LightID;
+
+
 };

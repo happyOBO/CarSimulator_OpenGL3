@@ -28,26 +28,29 @@ using namespace glm;
 using namespace std;
 
 
-class Car 
+class Map
 {
-private :
-	bool ego;
-	controls control;
-	glm::vec3 CarPosition;
-	//position Destination;
-	Object ObjectCar;
-	ControlRanges ControlRange;
-	MVP_Matrix MVP;
-	IDs Ids;
-	void ObjectInit();
-	void ComputeMVP();
+private:
+	glm::vec3 GroundPosition;
+	MVP_Matrix GroundMVP;
+	Object ObjectGround;
 
-public :
-	Car();
-	Car(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID, GLuint* ViewMatrixID, GLuint* ModelMatrixID);
-	void DrawCar();
+	glm::vec3 RoadPosition;
+	MVP_Matrix RoadMVP;
+	Object ObjectRoad;
+
+	glm::vec3 BuildingPosition;
+	MVP_Matrix BuildingMVP;
+	Object ObjectBuilding;
+
+	IDs Ids;
+
+public:
+	Map();
+	Map(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID, GLuint* ModelMatrixID);
+	void ObjectInit();
+	void DrawMap(mat4 PV);
+	void ComputeMVP();
 	void release();
-	void ComputeControlsFromInputs();
-	glm::mat4 ReturnPV();
-	
+
 };

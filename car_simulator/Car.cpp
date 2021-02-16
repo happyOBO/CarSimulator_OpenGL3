@@ -7,7 +7,7 @@ const float initialFoV = 45.0f;
 
 Car::Car() {}
 
-Car::Car(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID)
+Car::Car(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLuint* MatrixID, GLuint* TextureID, GLuint* ViewMatrixID, GLuint* ModelMatrixID)
 {
 	CarPosition.x = init_x;
 	CarPosition.y = init_y;
@@ -28,6 +28,9 @@ Car::Car(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLui
 	Ids.programID = programID;
 	Ids.MatrixID = MatrixID;
 	Ids.TextureID = TextureID;
+	Ids.ViewMatrixID = ViewMatrixID;
+	Ids.ModelMatrixID = ModelMatrixID;
+
 	ego = true;
 
 }
@@ -48,6 +51,9 @@ void Car::ObjectInit()
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectCar.uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, ObjectCar.uvs.size() * sizeof(glm::vec2), &ObjectCar.uvs[0], GL_STATIC_DRAW);
 
+	glGenBuffers(1, &ObjectCar.normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectCar.normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectCar.normals.size() * sizeof(glm::vec2), &ObjectCar.normals[0], GL_STATIC_DRAW);
 
 }
 
@@ -58,6 +64,9 @@ void Car::DrawCar()
 
 	glm::mat4 TotalMVP = MVP.ProjectionMatrix * MVP.ViewMatrix * MVP.ModelMatrix;
 	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalMVP[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &MVP.ModelMatrix[0][0]);
+	glUniformMatrix4fv(*(Ids.ViewMatrixID), 1, GL_FALSE, &MVP.ViewMatrix[0][0]);
+
 	glUniform1i(*(Ids.TextureID), 0);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -90,34 +99,42 @@ void Car::DrawCar()
 		(void*)0                          // array buffer offset
 	);
 
+
+	// 3rd attribute buffer : normals
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectCar.normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, ObjectCar.vertices.size());
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 }
 
 void Car::release()
 {
 	glDeleteBuffers(1, &ObjectCar.vertexbuffer);
 	glDeleteBuffers(1, &ObjectCar.uvbuffer);
+	glDeleteBuffers(1, &ObjectCar.normalbuffer);
 	glDeleteTextures(1, &ObjectCar.Texture);
 }
 
 void Car::ComputeMVP()
 {
 
-	// MVP.ModelMatrix = glm::mat4(1.0);
-
-	// glm::vec3 rotate_vec(0.0f, 1.0f, 0.0f);
-	// MVP.ModelMatrix = glm::rotate(MVP.ModelMatrix, control.steer + PI, rotate_vec);
 	CarPosition.x += control.throttle * sin(control.steer + PI);
 	CarPosition.z += control.throttle * cos(control.steer + PI);
-	//glm::vec3 trans_vec(control.throttle * sin(control.steer + PI), 0.0f, control.throttle * cos(control.steer + PI));
-	
-	glm::vec3 trans_vec(CarPosition.x , 0.2f, CarPosition.z);
 
-	//MVP.ModelMatrix = glm::rotate(MVP.ModelMatrix, control.steer + PI, rotate_vec);
+	glm::vec3 trans_vec(CarPosition.x , 0.2f, CarPosition.z);
 	
 	glm::mat4 RotationMatrix = eulerAngleYXZ(control.steer + PI ,0.0f,0.0f );
 	glm::mat4 TranslationMatrix = translate(mat4(), trans_vec);
@@ -127,7 +144,6 @@ void Car::ComputeMVP()
 
 	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
-	// Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	MVP.ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
 
 	// Camera matrix
@@ -159,7 +175,8 @@ void Car::ComputeControlsFromInputs()
 	}
 	// Move backward
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		control.brake = true;
+		control.throttle = std::max(control.throttle - deltaTime * 10 * ControlRange.Friction, 0.0f);
+
 	}
 	// Strafe right
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
