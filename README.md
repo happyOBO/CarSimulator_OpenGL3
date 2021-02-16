@@ -1,6 +1,6 @@
 # CarSimulator_OpenGL3
 
-- `Opengl3.0` 제작
+- `Opengl3` 제작
   
 <img src="./demo2.gif" width="600">
 
