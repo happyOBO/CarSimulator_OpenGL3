@@ -2,7 +2,7 @@
 
 - `Opengl3.0` 제작
   
-<img src="./demo.gif" width="600">
+<img src="./demo2.gif" width="600">
 
 
 ### To do
