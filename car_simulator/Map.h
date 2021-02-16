@@ -43,6 +43,10 @@ private:
 	MVP_Matrix BuildingMVP;
 	Object ObjectBuilding;
 
+	glm::vec3 TreePosition;
+	MVP_Matrix TreeMVP;
+	Object ObjectTree;
+
 	IDs Ids;
 
 public:

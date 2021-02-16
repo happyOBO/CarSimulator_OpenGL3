@@ -21,6 +21,11 @@ Map::Map(GLfloat init_x, GLfloat init_y, GLfloat init_z, GLuint* programID, GLui
 	BuildingPosition.y = init_y + 0.1f;
 	BuildingPosition.z = init_z;
 
+
+	TreePosition.x = init_x;
+	TreePosition.y = init_y + 0.1f;
+	TreePosition.z = init_z;
+
 	Ids.programID = programID;
 	Ids.MatrixID = MatrixID;
 	Ids.TextureID = TextureID;
@@ -88,6 +93,27 @@ void Map::ObjectInit()
 	glGenBuffers(1, &ObjectBuilding.normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.normalbuffer);
 	glBufferData(GL_ARRAY_BUFFER, ObjectBuilding.normals.size() * sizeof(glm::vec2), &ObjectBuilding.normals[0], GL_STATIC_DRAW);
+
+
+	ObjectTree.Texture = loadBMP_custom("join_tree.BMP");
+
+	res = loadOBJ("trees.obj", ObjectTree.vertices, ObjectTree.uvs, ObjectTree.normals);
+
+	// Load it into a VBO
+
+	glGenBuffers(1, &ObjectTree.vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.vertexbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectTree.vertices.size() * sizeof(glm::vec3), &ObjectTree.vertices[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &ObjectTree.uvbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.uvbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectTree.uvs.size() * sizeof(glm::vec2), &ObjectTree.uvs[0], GL_STATIC_DRAW);
+
+
+	glGenBuffers(1, &ObjectTree.normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, ObjectTree.normals.size() * sizeof(glm::vec2), &ObjectTree.normals[0], GL_STATIC_DRAW);
+
 
 }
 
@@ -196,7 +222,7 @@ void Map::DrawMap(mat4 PV)
 	glm::mat4 TotalBuildingMVP = PV * BuildingMVP.ModelMatrix;
 
 	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalBuildingMVP[0][0]);
-	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &RoadMVP.ModelMatrix[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &BuildingMVP.ModelMatrix[0][0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, ObjectBuilding.vertexbuffer);
 	glVertexAttribPointer(
@@ -237,7 +263,53 @@ void Map::DrawMap(mat4 PV)
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, ObjectBuilding.vertices.size());
 
+	// Trees
 
+	glBindTexture(GL_TEXTURE_2D, ObjectTree.Texture);
+
+	glm::mat4 TotalTreeMVP = PV * TreeMVP.ModelMatrix;
+
+	glUniformMatrix4fv(*(Ids.MatrixID), 1, GL_FALSE, &TotalTreeMVP[0][0]);
+	glUniformMatrix4fv(*(Ids.ModelMatrixID), 1, GL_FALSE, &TreeMVP.ModelMatrix[0][0]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.vertexbuffer);
+	glVertexAttribPointer(
+		0,                  // attribute
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
+	// 2nd attribute buffer : UVs
+
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.uvbuffer);
+	glVertexAttribPointer(
+		1,                                // attribute
+		2,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
+
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, ObjectTree.normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
+	// Draw the triangle !
+	glDrawArrays(GL_TRIANGLES, 0, ObjectTree.vertices.size());
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 }
@@ -259,6 +331,11 @@ void Map::release()
 	glDeleteBuffers(1, &ObjectBuilding.uvbuffer);
 	glDeleteBuffers(1, &ObjectBuilding.normalbuffer);
 	glDeleteTextures(1, &ObjectBuilding.Texture);
+
+	glDeleteBuffers(1, &ObjectTree.vertexbuffer);
+	glDeleteBuffers(1, &ObjectTree.uvbuffer);
+	glDeleteBuffers(1, &ObjectTree.normalbuffer);
+	glDeleteTextures(1,&ObjectTree.Texture);
 }
 
 void Map::ComputeMVP()
@@ -286,5 +363,12 @@ void Map::ComputeMVP()
 
 	BuildingMVP.ModelMatrix = BuildingTranslationMatrix * RotationMatrix * ScalingMatrix;
 
+
+	glm::vec3 Treetrans_vec(TreePosition.x, TreePosition.y, TreePosition.z);
+	glm::mat4 TreeTranslationMatrix = translate(mat4(), Treetrans_vec);
+	glm::mat4 TreeRotationMatrix = eulerAngleYXZ(0.0f, 0.0f, 0.0f);
+	glm::mat4 TreeScalingMatrix = scale(mat4(), vec3(20.0f, 2.0f, 20.0f));
+
+	TreeMVP.ModelMatrix = TreeTranslationMatrix * TreeRotationMatrix * TreeScalingMatrix;
 
 }
